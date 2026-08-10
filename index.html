@@ -118,6 +118,19 @@
     border-bottom:1px solid var(--line);
   }
   td{border:0;border-bottom:1px solid #d1d5dc;padding:8px 8px;text-align:center;background:var(--panel);transition:.15s ease}
+  th:nth-child(6){
+    background:linear-gradient(180deg,#e9eef9,#f3f5f9);
+    color:#536a9f;
+    box-shadow:inset 1px 0 0 rgba(72,94,148,.10),inset -1px 0 0 rgba(72,94,148,.10);
+  }
+  td:nth-child(6){
+    box-shadow:inset 1px 0 0 rgba(72,94,148,.08),inset -1px 0 0 rgba(72,94,148,.08);
+  }
+  .effectiveCell{
+    font-weight:800 !important;
+    color:#435a8f !important;
+    background-image:linear-gradient(rgba(88,110,164,.055),rgba(88,110,164,.055)) !important;
+  }
   tbody tr:last-child td{border-bottom:0} tbody tr:hover td{background:#e3e6eb}
   tr.regular td:first-child{box-shadow:inset 3px 0 0 var(--green)}
   tr.premium td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
@@ -457,7 +470,7 @@
 
         <div class="rows">
           <div class="detail-section">Hours</div><div class="detail-section"></div>
-          <div>Total Hours Worked</div><div id="sumHours">0.00 hrs</div>
+          <div>Total Hours Counted</div><div id="sumHours">0.00 hrs</div>
           <div>Regular Hours</div><div id="sumRegularCombined">0.00 hrs</div>
           <div>Picked Up Hours</div><div id="sumPremium">0.00 hrs</div>
           <div>VOT Hours</div><div id="sumVOTDetail">0.00 hrs</div>
@@ -477,11 +490,6 @@
         </div>
       </div>
     </div>
-
-    <div class="note">
-      Enter hours in 0.25 increments: 0.25 = 15 minutes, 0.50 = 30 minutes, and 0.75 = 45 minutes. Total Hours Worked includes every hour you work. Regular Hours includes Regular, VOT, MOT, Holiday, and DAT/HAT/FTO hours. DAT/HAT/FTO is always calculated at your base hourly rate. Picked Up Hours tracks Premium hours separately. Southwest wages are taxed using your adjustable average tax rate, while Premiums Received are treated as untaxed money paid directly by the other agent. Estimated Deductions can be used for your combined 401(k), insurance, ESPP, or other payroll deductions. The goal tracks estimated take-home after taxes and deductions.
-    
-</div>
   </div>
 </div>
 
@@ -498,10 +506,16 @@ function num(n) {
   return Number(n || 0).toFixed(2);
 }
 
+function todayLocalISO() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 function addRow(data = {}) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><input type="date" class="date" value="${data.date || ''}"></td>
+    <td><input type="date" class="date" value="${data.date || todayLocalISO()}"></td>
     <td class="type-cell">
       <select class="type">
         <option value="Regular Awarded" ${data.type === 'Regular Awarded' ? 'selected' : ''}>Regular</option>
@@ -768,7 +782,7 @@ function buildPdfBlob() {
   lines.push(`Base Hourly Wage: ${money(base)}`);
   lines.push(`Average Tax Rate: ${Number(taxRateEl.value || 0).toFixed(1)}%`);
   lines.push(`Total Hours: ${totalHours.toFixed(2)}`);
-  lines.push(`Total Hours Worked: ${document.getElementById('sumHours').textContent}`);
+  lines.push(`Total Hours Counted: ${document.getElementById('sumHours').textContent}`);
   lines.push(`Regular Hours: ${document.getElementById('sumRegularCombined').textContent}`);
   lines.push(`Picked Up Hours: ${document.getElementById('sumPremium').textContent}`);
   lines.push(`VOT Hours: ${document.getElementById('sumVOTDetail').textContent}`);

@@ -267,7 +267,11 @@
     letter-spacing:.09em;color:var(--muted)!important;background:#eef0f4!important;
     padding-top:9px!important;padding-bottom:7px!important;
   }
-    .detail-money-input{
+      .southwest-expected-label,.southwest-expected-value{
+    padding-top:5px;font-weight:800;color:#46546e;
+    border-top:1px solid rgba(100,112,138,.14);
+  }
+.detail-money-input{
     width:105px;text-align:right;background:transparent;border:0;border-bottom:1px dashed #aeb5c0;
     border-radius:0;padding:1px 0;color:var(--ink);font:inherit;font-weight:700;
   }
@@ -485,8 +489,9 @@
           <div>Estimated Taxes</div><div id="sumTaxes">$0.00</div>
           <div>Estimated Deductions</div><div id="sumDeductions">$0.00</div>
           <div>Net Southwest Wages</div><div id="sumNetSouthwest">$0.00</div>
+          <div class="southwest-expected-label">Expected Southwest Pay</div><div id="sumExpectedSouthwest" class="southwest-expected-value">$0.00</div>
 
-          <div>Premiums Received</div><div id="sumUntaxedPremium">$0.00</div>
+          <div class="southwest-expected-label">Premiums Received</div><div id="sumUntaxedPremium" class="southwest-expected-value">$0.00</div>
         </div>
       </div>
     </div>
@@ -664,6 +669,7 @@ function recalc() {
   setText('sumTaxes', money(estimatedTaxes));
   setText('sumDeductions', money(estimatedDeductions));
   setText('sumNetSouthwest', money(netSouthwestWages));
+  setText('sumExpectedSouthwest', money(netSouthwestWages));
   setText('sumUntaxedPremium', money(untaxedPremiums));
   setText('sumPay', money(takeHomePay));
   updateGoal(takeHomePay);
@@ -793,6 +799,7 @@ function buildPdfBlob() {
   lines.push(`Estimated Taxes: ${document.getElementById('sumTaxes').textContent}`);
   lines.push(`Estimated Deductions: ${document.getElementById('sumDeductions').textContent}`);
   lines.push(`Net Southwest Wages: ${document.getElementById('sumNetSouthwest').textContent}`);
+  lines.push(`Expected Southwest Pay: ${document.getElementById('sumExpectedSouthwest').textContent}`);
   lines.push(`Premiums Received: ${document.getElementById('sumUntaxedPremium').textContent}`);
   lines.push(`Estimated Take-Home: ${totalPayText}`);
   lines.push(`Take-Home Goal: ${money(getPayGoal())}`);

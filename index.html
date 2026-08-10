@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Southwest Pay Tracker</title>
+<style>
+  :root {
+    --blue:#4f6fcf; --blue2:#6682d8; --ink:#252b36; --muted:#6f7785;
+    --line:#cfd4dc; --soft:#e5e8ed; --gold:#c99531; --green:#328b68;
+    --danger:#bd5d66; --white:#e9ebef; --sky:#dce3f2; --lavender:#e3dff0;
+    --mint:#dce9e2; --peach:#eee4d3; --rose:#eedcdf; --teal:#458f8b;
+    --panel:#e9ebef; --panel2:#e1e4e9; --input:#f3f4f6; --hover:#d8dce3;
+  }
+  *{box-sizing:border-box}
+  html{color-scheme:light}
+  body{
+    margin:0; min-height:100vh; color:var(--ink);
+    font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    background:linear-gradient(145deg,#cfd3da 0%,#d9dce2 55%,#d2d5dc 100%);
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 18px 44px}
+  .card{background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible}
+
+  .title{
+    position:relative;display:flex;align-items:center;width:100%;margin:2px 0 18px;
+    padding:17px 18px 20px 20px;color:var(--ink);font-size:46px;line-height:1.05;
+    font-weight:900;letter-spacing:-.055em;text-align:left;
+    background:linear-gradient(90deg,rgba(226,231,242,.78),rgba(235,232,237,.46),transparent);
+    border-left:5px solid #3158b8;border-radius:12px;
+  }
+  .title::before{
+    content:"♥";display:inline-flex;align-items:center;justify-content:center;
+    width:34px;height:34px;margin-right:13px;border-radius:50%;
+    background:linear-gradient(135deg,#3158b8 0 48%,#c85467 49% 73%,#e2ae3f 74%);
+    color:white;font-size:17px;line-height:1;text-shadow:0 1px 2px rgba(0,0,0,.18);
+    box-shadow:0 3px 8px rgba(49,88,184,.16);flex:0 0 auto;
+  }
+  .title::after{
+    content:"";position:absolute;left:20px;bottom:8px;width:155px;height:3px;border-radius:99px;
+    background:linear-gradient(90deg,#3158b8 0 48%,#c85467 48% 76%,#e2ae3f 76%);
+  }
+  @media(max-width:560px){
+    .title{font-size:34px;padding:15px 12px 18px 14px}
+    .title::before{width:29px;height:29px;font-size:14px;margin-right:10px}
+    .title::after{left:14px;width:125px}
+  }
+
+  .summary-grid{
+    display:grid; grid-template-columns:minmax(180px,1.15fr) repeat(3,minmax(150px,1fr));
+    gap:0; padding:0; background:var(--white); border:1px solid var(--line);
+    border-radius:18px; overflow:hidden; box-shadow:0 10px 28px rgba(45,52,65,.12);
+  }
+  .summary-box{
+    position:relative; min-height:94px; padding:18px 20px; background:transparent;
+    border:0; border-right:1px solid var(--line); border-radius:0; box-shadow:none;
+  }
+  .summary-box:last-child{border-right:0}
+
+  .summary-box:nth-child(1){background:linear-gradient(135deg,#e9ebef 0%,var(--sky) 100%)}
+  .summary-box:nth-child(2){background:linear-gradient(135deg,#e9ebef 0%,var(--mint) 100%)}
+  .summary-box:nth-child(3){background:linear-gradient(135deg,#e9ebef 0%,var(--peach) 100%)}
+  .summary-box:nth-child(4){background:linear-gradient(135deg,#e9ebef 0%,var(--lavender) 100%)}
+  .summary-box:nth-child(2) .value{color:var(--green)}
+  .summary-box:nth-child(3) .value{color:#c68118}
+  .summary-box:nth-child(4) .value{color:var(--blue)}
+
+  .summary-box::before{display:none}
+  .summary-box label{
+    display:block; font-size:10px; font-weight:800; color:var(--muted);
+    margin-bottom:8px; text-transform:uppercase; letter-spacing:.08em;
+  }
+  .summary-box .value{font-size:25px;font-weight:760;letter-spacing:-.03em;color:var(--ink)}
+  .summary-box input{
+    width:116px; font-size:24px; font-weight:760; color:var(--ink); border:0;
+    border-bottom:2px solid #c2c8d1; background:transparent; padding:2px 0 5px;
+    border-radius:0; outline:none; transition:.18s ease;
+  }
+  .summary-box input:focus{border-color:var(--blue);box-shadow:none}
+
+  .tax-setting{display:flex;align-items:center;gap:8px;margin-top:10px}
+  .tax-setting label{
+    margin:0;font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.06em;
+  }
+  .tax-setting input{
+    width:72px;font-size:13px;font-weight:750;padding:3px 0 4px;
+  }
+
+
+  .actions{display:flex;gap:8px;padding:18px 0 13px;flex-wrap:wrap;align-items:center}
+  .autosave-status{
+    margin-left:auto;font-size:11px;font-weight:700;color:#6f7890;
+    display:inline-flex;align-items:center;gap:6px;padding:7px 2px;
+  }
+  .autosave-status::before{
+    content:"";width:7px;height:7px;border-radius:50%;background:#20a374;
+    box-shadow:0 0 0 3px rgba(32,163,116,.12);
+  }
+
+  button{
+    border:0; border-radius:999px; padding:9px 14px; font:inherit; font-size:12px;
+    font-weight:760; cursor:pointer; transition:.15s ease; background:transparent;
+  }
+  button:hover{transform:translateY(-1px)} button:active{transform:none}
+  .primary{background:var(--blue);color:white;box-shadow:0 5px 13px rgba(48,76,178,.19)}
+  .primary:hover{background:var(--blue2);box-shadow:0 7px 16px rgba(48,76,178,.22)}
+  .secondary{background:#dce1ec;color:#425b9f}.secondary:hover{background:#d1d7e4}
+  .danger{background:#ead9dc;color:#a64d57}.danger:hover{background:#e2cfd3}
+
+  .table-wrap{
+    overflow-x:auto; margin:0; border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 8px 28px rgba(34,49,82,.055); background:var(--panel);
+  }
+  table{width:100%;border-collapse:separate;border-spacing:0;min-width:1030px}
+  th{
+    position:sticky;top:0;z-index:1;background:linear-gradient(180deg,#f4f7ff,#fbfcfe);color:#68779a;padding:12px 10px;
+    font-size:9.5px;font-weight:820;text-transform:uppercase;letter-spacing:.07em;text-align:center;
+    border-bottom:1px solid var(--line);
+  }
+  td{border:0;border-bottom:1px solid #d1d5dc;padding:8px 8px;text-align:center;background:var(--panel);transition:.15s ease}
+  tbody tr:last-child td{border-bottom:0} tbody tr:hover td{background:#e3e6eb}
+  tr.regular td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+  tr.premium td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
+  tr.vot td:first-child{box-shadow:inset 3px 0 0 #7a63d8}
+  tr.mot td:first-child{box-shadow:inset 3px 0 0 #d85f5f}
+  tr.holiday td:first-child{box-shadow:inset 3px 0 0 #2f6fd6}
+  tr.dat-hat-fto td:first-child{box-shadow:inset 3px 0 0 #e56f2d}
+  tr.regular td.type-cell{background:#d7e9df}
+  tr.premium td.type-cell{background:#eee1c5}
+  tr.vot td.type-cell{background:#e2dcef}
+  tr.mot td.type-cell{background:#ead8dc}
+  tr.holiday td.type-cell{background:#d9e3f4}
+  tr.dat-hat-fto td.type-cell{background:#f0d8c8}
+
+  tr.regular td{background:#d7e9df;border-bottom-color:#bdd6c8}
+  tr.premium td{background:#eee1c5;border-bottom-color:#dbc794}
+  tr.vot td{background:#e2dcef;border-bottom-color:#c8bde0}
+  tr.mot td{background:#ead8dc;border-bottom-color:#d7b4bb}
+  tr.holiday td{background:#d9e3f4;border-bottom-color:#b8c9e6}
+  tr.dat-hat-fto td{background:#f0d8c8;border-bottom-color:#ddb89e}
+  tr.regular .type{color:#147a55;font-weight:700}
+  tr.premium .type{color:#a66d0d;font-weight:700}
+  tr.vot .type{color:#6651bd;font-weight:700}
+  tr.mot .type{color:#b4434d;font-weight:700}
+  tr.holiday .type{color:#245bb5;font-weight:700}
+  tr.dat-hat-fto .type{color:#a45d12;font-weight:700}
+
+
+  th:nth-child(2),td:nth-child(2){width:150px}
+
+
+  tr.regular input,tr.regular select{background:#e4f0e9;border-color:#b2cfbe}
+  tr.premium input,tr.premium select{background:#f4ead5;border-color:#d7c18c}
+  tr.vot input,tr.vot select{background:#ebe6f4;border-color:#c5b9dd}
+  tr.mot input,tr.mot select{background:#f1e3e6;border-color:#d4afb6}
+  tr.holiday input,tr.holiday select{background:#e5ecf8;border-color:#b4c6e5}
+  tr.dat-hat-fto input,tr.dat-hat-fto select{background:#f5e2d6;border-color:#ddaf91}
+
+  tr.regular .readonly{background:#d7e9df;color:#245e47}
+  tr.premium .readonly{background:#eee1c5;color:#78581c}
+  tr.vot .readonly{background:#e2dcef;color:#5c4b8e}
+  tr.mot .readonly{background:#ead8dc;color:#8d444d}
+  tr.holiday .readonly{background:#d9e3f4;color:#36599e}
+  tr.dat-hat-fto .readonly{background:#f0d8c8;color:#895536}
+
+  tr.regular .removeBtn{background:#c8dfd2;color:#286b50}
+  tr.premium .removeBtn{background:#e3d2ad;color:#7d5b1a}
+  tr.vot .removeBtn{background:#d5cce8;color:#5f4b96}
+  tr.mot .removeBtn{background:#dfc6cb;color:#944852}
+  tr.holiday .removeBtn{background:#cbd8ed;color:#3a5fa8}
+  tr.dat-hat-fto .removeBtn{background:#e8c8b4;color:#974d27}
+  tr.dat-hat-fto .removeBtn{background:#e8c8b4;color:#974d27}
+
+
+  /* Color-coded Hour Type dropdown */
+  tr.regular .type{background:#d9e9e0;border-color:#9dc6b2;color:#286f55}
+  tr.premium .type{background:#eee2c9;border-color:#d1b778;color:#8c651b}
+  tr.vot .type{background:#e2ddef;border-color:#b9acd8;color:#6650a1}
+  tr.mot .type{background:#eadadd;border-color:#d2a4aa;color:#9e4b54}
+  tr.holiday .type{background:#dce4f4;border-color:#aabce1;color:#3f62b6}
+  tr.dat-hat-fto .type{background:#f0d8c8;border-color:#d4b991;color:#a95322}
+  .type{font-weight:750;font-size:11px;padding-left:8px;padding-right:24px;letter-spacing:-.01em}
+  .type option[value="Regular Awarded"]{color:#286f55;background:#d9e9e0}
+  .type option[value="Premium Pickup"]{color:#8c651b;background:#eee2c9}
+  .type option[value="VOT"]{color:#6650a1;background:#e2ddef}
+  .type option[value="MOT"]{color:#9e4b54;background:#eadadd}
+  .type option[value="Holiday"]{color:#3f62b6;background:#dce4f4}
+  .type option[value="DAT/HAT/FTO"]{color:#a95322;background:#f0d8c8}
+
+
+  input,select{
+    width:100%;padding:8px 9px;border:1px solid transparent;border-radius:9px;font:inherit;
+    color:var(--ink);background:var(--input);outline:none;transition:.16s ease;
+  }
+  input:hover,select:hover{background:var(--hover)}
+  input:focus,select:focus{background:var(--panel);border-color:#b9c6ea;box-shadow:0 0 0 3px rgba(48,76,178,.08)}
+  input:disabled{background:transparent;color:#b3bac6;cursor:not-allowed}
+  input.invalid{background:#ead9dc;border-color:#c7858c;box-shadow:none}
+  .money,.hours{font-variant-numeric:tabular-nums}
+  .readonly{background:transparent;font-weight:650;color:#5a6578;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .expectedCell{color:var(--blue);font-weight:800;background:transparent}
+  .removeBtn{padding:7px 10px;font-size:11px}
+
+  .footer-summary{
+    margin:18px 0 0; border:0; border-radius:0; overflow:visible; background:transparent; box-shadow:none;
+    display:flex; flex-direction:column; align-items:flex-end; justify-content:flex-end; gap:0;
+  }
+  .footer-summary .head{display:none}
+
+  .takehome-highlight{
+    width:100%;max-width:520px;display:flex;align-items:center;justify-content:space-between;
+    gap:14px;background:var(--panel);border:1px solid var(--line);
+    border-radius:14px;padding:11px 14px;box-shadow:none;
+  }
+  .takehome-highlight>div{display:flex;flex-direction:column;gap:3px}
+  .takehome-label{
+    font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  }
+  .takehome-highlight strong{
+    font-size:18px;color:var(--ink);letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+    font-weight:800;
+  }
+  .details-toggle{
+    background:#e2e5ea;color:#596273;border:1px solid #cbd0d8;border-radius:999px;
+    padding:7px 11px;font-size:10px;font-weight:800;box-shadow:none;
+  }
+.details-toggle:hover{background:#d8dce3;color:#3f4755}
+  .pay-details{width:100%;max-width:520px;margin-top:8px}
+  .pay-details[hidden]{display:none}
+
+  .settings-inline{
+    display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:520px;
+    margin:0 0 8px;padding:10px 12px;background:#e7e9ed;border:1px solid var(--line);
+    border-radius:12px;
+  }
+  .settings-field label{
+    display:block;margin-bottom:5px;font-size:9px;font-weight:850;text-transform:uppercase;
+    letter-spacing:.07em;color:var(--muted);
+  }
+  .settings-field{min-width:0}
+  .settings-field input{
+    width:100%;min-width:0;background:#f3f4f6;border:1px solid #cbd0d8;border-radius:8px;
+    padding:7px 8px;color:var(--ink);font-size:12px;font-weight:750;
+  }
+  @media(max-width:420px){
+    .settings-inline{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:8px}
+    .settings-field label{font-size:7.5px;letter-spacing:.035em}
+    .settings-field input{padding:6px 5px;font-size:11px}
+  }
+
+
+  .pay-details .detail-section{
+    font-size:9px!important;font-weight:900!important;text-transform:uppercase;
+    letter-spacing:.09em;color:var(--muted)!important;background:#eef0f4!important;
+    padding-top:9px!important;padding-bottom:7px!important;
+  }
+    .detail-money-input{
+    width:105px;text-align:right;background:transparent;border:0;border-bottom:1px dashed #aeb5c0;
+    border-radius:0;padding:1px 0;color:var(--ink);font:inherit;font-weight:700;
+  }
+  .detail-money-input:focus{outline:none;border-bottom-color:var(--blue)}
+.pay-details .detail-divider{
+    height:5px;padding:0!important;background:transparent!important;border-top:1px solid #d5d9e0!important;
+  }
+
+
+  .footer-summary .rows{
+    display:grid; grid-template-columns:auto auto; min-width:390px; background:var(--panel);
+    border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    box-shadow:0 7px 22px rgba(45,52,65,.10);
+  }
+  .footer-summary .rows div{padding:10px 14px;border-top:1px solid #f0f2f6;font-size:12px}
+  .footer-summary .rows div:nth-child(-n+2){border-top:0}
+  .footer-summary .rows div:nth-child(odd){color:var(--muted)}
+  .footer-summary .rows div:nth-child(even){min-width:130px;text-align:right;font-weight:760;color:var(--ink);font-variant-numeric:tabular-nums}
+  .summary-pay{
+    display:inline-block;margin-left:10px;padding:3px 8px;border-radius:999px;
+    background:#d9e0f2;color:#405baf;font-weight:820;min-width:82px;text-align:right;
+  }
+  /* Pay Details rows intentionally use one consistent style. */
+
+  .goal-wrap{
+    margin:10px 0 2px;padding:0 18px;text-align:left;
+  }
+  .goal-toggle{
+    position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#1f9d68 0%,#35c987 48%,#168653 100%);
+    color:#fff;border:1px solid rgba(255,255,255,.32);
+    border-radius:999px;padding:9px 16px;font-size:11px;font-weight:850;
+    box-shadow:0 5px 14px rgba(31,157,104,.28), inset 0 1px 0 rgba(255,255,255,.34);
+    text-shadow:0 1px 1px rgba(0,0,0,.16);
+    transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
+  }
+  .goal-toggle::before{
+    content:"";position:absolute;left:8%;right:8%;top:2px;height:42%;
+    border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));
+    pointer-events:none;
+  }
+  .goal-toggle:hover{
+    transform:translateY(-1px);filter:brightness(1.06);
+    box-shadow:0 7px 18px rgba(31,157,104,.34), inset 0 1px 0 rgba(255,255,255,.38);
+  }
+  .goal-toggle:active{transform:translateY(0);filter:brightness(.98)}
+  .goal-panel{
+    display:none;margin-top:14px;padding:18px 20px 20px;
+    background:linear-gradient(135deg,#dcecdf 0%,#d2e6d8 48%,#e5eee2 100%);
+    border:1px solid #9fc5a8;border-radius:16px;text-align:left;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 8px 20px rgba(44,111,73,.10);
+  }
+  .goal-panel.show{display:block}
+  .goal-top{
+    display:flex;justify-content:space-between;gap:14px;align-items:flex-end;
+    margin-bottom:10px;flex-wrap:wrap;
+  }
+  .goal-title{font-size:12px;font-weight:900;color:#287148;text-transform:uppercase;letter-spacing:.09em}
+  .goal-value{font-size:26px;font-weight:900;color:#174f32;letter-spacing:-.035em}
+
+  .goal-target-row{
+    display:flex;align-items:center;gap:8px;margin:8px 0 5px;
+  }
+  .goal-target-row label{
+    font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:#47725a;
+  }
+  .goal-target-row input{
+    width:120px;padding:6px 9px;border-radius:8px;border:1px solid #9fc5a8;
+    background:#eef6f0;color:#174f32;font-size:13px;font-weight:850;
+  }
+
+  .goal-sub{font-size:12px;color:#47725a;margin-top:4px;font-weight:650}
+  .goal-track{
+    width:100%;height:12px;background:#c9ced7;border-radius:999px;overflow:hidden;
+  }
+  .goal-fill{
+    height:100%;width:0%;border-radius:999px;
+    background:linear-gradient(90deg,#5575d2,#846cc2,#c4973e);
+    transition:width .35s ease;
+  }
+  .goal-meta{
+    display:flex;justify-content:space-between;gap:12px;margin-top:9px;
+    font-size:11px;font-weight:800;color:#37664b;flex-wrap:wrap;
+  }
+
+  .goal-panel .secondary{
+    background:#c3ddca;color:#246341;border:1px solid #9fc5a8;
+  }
+  .goal-panel .secondary:hover{background:#b6d5bf}
+  .goal-panel.goal-complete{
+    background:linear-gradient(135deg,#c9e8d1,#bde1c8,#d9edcf);
+    border-color:#70b784;
+    box-shadow:0 8px 24px rgba(37,126,75,.16),inset 0 1px 0 rgba(255,255,255,.65);
+  }
+  .goal-panel.goal-complete .goal-value{color:#0f6538}
+
+
+  .note{
+    margin:14px 2px 0;padding:0;background:transparent;border:0;border-radius:0;
+    color:#8b93a2;font-size:11.5px;line-height:1.55;
+  }
+  .note::before{content:"TIP";display:inline;color:var(--blue);font-size:10px;font-weight:850;letter-spacing:.08em;margin-right:7px}
+
+  @media(max-width:900px){
+    .wrap{padding:14px 10px 30px}.title{font-size:23px;padding:10px 2px 17px}
+    .summary-grid{grid-template-columns:1fr 1fr}.summary-box:nth-child(2){border-right:0}.summary-box:nth-child(-n+2){border-bottom:1px solid var(--line)}
+    .footer-summary{justify-content:stretch}.footer-summary .rows{width:100%;min-width:0}
+  }
+  @media(max-width:560px){
+    .wrap{padding:10px 8px 24px}.summary-grid{grid-template-columns:1fr}.summary-box{border-right:0;border-bottom:1px solid var(--line);min-height:auto;padding:14px 16px}.summary-box:last-child{border-bottom:0}
+    .actions{gap:6px}.actions button{flex:1 1 auto}.table-wrap{border-radius:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="title">SWA Earnings Tracker</div>
+
+    <div class="goal-wrap">
+      <button class="goal-toggle" id="goalToggleBtn" type="button">Reveal Pay Goal</button>
+      <div class="goal-panel" id="goalPanel" aria-live="polite">
+        <div class="goal-top">
+          <div>
+            <div class="goal-title">Pay Period Goal</div>
+            <div class="goal-target-row">
+              <label for="payGoalInput">Target</label>
+              <input id="payGoalInput" type="text" inputmode="decimal" value="$2,400.00" aria-label="Pay period goal">
+            </div>
+            <div class="goal-value" id="goalProgressText">$0.00 of $2,400.00</div>
+            <div class="goal-sub" id="goalMessage">Your progress is waiting.</div>
+          </div>
+          <button class="secondary" id="hideGoalBtn" type="button">Hide Goal</button>
+        </div>
+        <div class="goal-track" aria-label="Progress toward $2,400 pay goal">
+          <div class="goal-fill" id="goalFill"></div>
+        </div>
+        <div class="goal-meta">
+          <span id="goalPercent">0% complete</span>
+          <span id="goalHours">0.00 hrs counted</span>
+          <span id="goalRemaining">$2,400.00 remaining</span>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="actions">
+      <button class="primary" id="addRowBtn">+ Add Entry</button>
+      <button class="secondary" id="downloadPdfBtn">Download PDF</button>
+      <button class="secondary" id="uploadPdfBtn">Upload PDF</button>
+      <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" hidden>
+      <span class="autosave-status" id="autosaveStatus">Auto-saved</span>
+      <button class="danger" id="clearBtn">Clear All</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Hour Type</th>
+            <th>Hours</th>
+            <th>Premium Paid</th>
+            <th>Base $/Hr</th>
+            <th>Effective $/Hr</th>
+            <th>Est. Take-Home</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+
+    <div class="footer-summary">
+      <div class="takehome-highlight">
+        <div>
+          <span class="takehome-label">Estimated Take-Home</span>
+          <strong id="sumPay">$0.00</strong>
+        </div>
+        <button class="details-toggle" id="detailsToggleBtn" type="button" aria-expanded="false" aria-controls="payDetails">
+          Show Pay Details
+        </button>
+      </div>
+
+      <div class="pay-details" id="payDetails" hidden>
+        <div class="settings-inline">
+          <div class="settings-field">
+            <label for="baseRate">Base Hourly Wage</label>
+            <input id="baseRate" type="number" min="0" step="0.01" value="22.24" />
+          </div>
+          <div class="settings-field">
+            <label for="taxRate">Avg. Tax %</label>
+            <input id="taxRate" type="number" min="0" max="100" step="0.1" value="20" />
+          </div>
+          <div class="settings-field">
+            <label for="deductionsInput">Estimated Deductions</label>
+            <input id="deductionsInput" type="text" inputmode="decimal" value="$0.00" />
+          </div>
+        </div>
+
+        <div class="rows">
+          <div class="detail-section">Hours</div><div class="detail-section"></div>
+          <div>Total Hours Worked</div><div id="sumHours">0.00 hrs</div>
+          <div>Regular Hours</div><div id="sumRegularCombined">0.00 hrs</div>
+          <div>Picked Up Hours</div><div id="sumPremium">0.00 hrs</div>
+          <div>VOT Hours</div><div id="sumVOTDetail">0.00 hrs</div>
+          <div>MOT Hours</div><div id="sumMOTDetail">0.00 hrs</div>
+          <div>Holiday Hours</div><div id="sumHolidayDetail">0.00 hrs</div>
+          <div>DAT/HAT/FTO Hours</div><div id="sumDatHatFtoDetail">0.00 hrs</div>
+
+          <div class="detail-divider"></div><div class="detail-divider"></div>
+
+          <div class="detail-section">Southwest Pay</div><div class="detail-section"></div>
+          <div>Gross Southwest Wages</div><div id="sumTaxable">$0.00</div>
+          <div>Estimated Taxes</div><div id="sumTaxes">$0.00</div>
+          <div>Estimated Deductions</div><div id="sumDeductions">$0.00</div>
+          <div>Net Southwest Wages</div><div id="sumNetSouthwest">$0.00</div>
+
+          <div>Premiums Received</div><div id="sumUntaxedPremium">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      Enter hours in 0.25 increments: 0.25 = 15 minutes, 0.50 = 30 minutes, and 0.75 = 45 minutes. Total Hours Worked includes every hour you work. Regular Hours includes Regular, VOT, MOT, Holiday, and DAT/HAT/FTO hours. DAT/HAT/FTO is always calculated at your base hourly rate. Picked Up Hours tracks Premium hours separately. Southwest wages are taxed using your adjustable average tax rate, while Premiums Received are treated as untaxed money paid directly by the other agent. Estimated Deductions can be used for your combined 401(k), insurance, ESPP, or other payroll deductions. The goal tracks estimated take-home after taxes and deductions.
+    
+</div>
+  </div>
+</div>
+
+<script>
+const rowsEl = document.getElementById('rows');
+const baseRateEl = document.getElementById('baseRate');
+const taxRateEl = document.getElementById('taxRate');
+const deductionsInput = document.getElementById('deductionsInput');
+
+function money(n) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
+}
+function num(n) {
+  return Number(n || 0).toFixed(2);
+}
+
+function addRow(data = {}) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="date" class="date" value="${data.date || ''}"></td>
+    <td class="type-cell">
+      <select class="type">
+        <option value="Regular Awarded" ${data.type === 'Regular Awarded' ? 'selected' : ''}>Regular</option>
+        <option value="Premium Pickup" ${data.type === 'Premium Pickup' ? 'selected' : ''}>Premium</option>
+        <option value="VOT" ${data.type === 'VOT' ? 'selected' : ''}>VOT (1.5x)</option>
+        <option value="MOT" ${data.type === 'MOT' ? 'selected' : ''}>MOT (2.0x)</option>
+        <option value="Holiday" ${data.type === 'Holiday' ? 'selected' : ''}>Holiday (1.5x)</option>
+        <option value="DAT/HAT/FTO" ${data.type === 'DAT/HAT/FTO' ? 'selected' : ''}>DAT/HAT/FTO</option>
+      </select>
+    </td>
+    <td><input type="text" class="hours" inputmode="decimal" value="${data.hours !== undefined && data.hours !== '' ? formatHours(data.hours) : ''}" placeholder="0.00 hrs"></td>
+    <td><input type="text" class="premium" inputmode="decimal" value="${data.premium !== undefined && data.premium !== '' ? money(parseCurrency(data.premium)) : ''}" placeholder="$0.00"></td>
+    <td class="readonly baseCell">$0.00</td>
+    <td class="readonly effectiveCell">$0.00</td>
+    <td class="readonly expectedCell">$0.00</td>
+    <td><button class="danger removeBtn">Remove</button></td>
+  `;
+  rowsEl.appendChild(tr);
+
+  tr.querySelector('.removeBtn').addEventListener('click', () => {
+    tr.remove();
+    recalc();
+  });
+  tr.querySelectorAll('input, select').forEach(el => el.addEventListener('input', recalc));
+  recalc();
+}
+
+function parseHours(value) {
+  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+function formatHours(value) {
+  const hours = parseHours(value);
+  if (!hours && String(value ?? '').trim() === '') return '';
+  const display = Number.isInteger(hours) ? hours.toFixed(0) : hours.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  return `${display} hrs`;
+}
+
+function formatHoursInput(input) {
+  if (!input.value.trim()) return;
+  input.value = formatHours(input.value);
+}
+
+function parseCurrency(value) {
+  const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+function formatPremiumInput(input) {
+  if (!input.value.trim()) return;
+  input.value = money(parseCurrency(input.value));
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function recalc() {
+  const base = parseFloat(baseRateEl.value) || 0;
+  const taxRate = Math.max(0, Math.min(100, parseFloat(taxRateEl.value) || 0)) / 100;
+  let regularHours = 0, premiumHours = 0, votHours = 0, motHours = 0, holidayHours = 0, datHatFtoHours = 0, grossPay = 0;
+  let regularPay = 0, premiumPickupPay = 0, votPay = 0, motPay = 0, holidayPay = 0, datHatFtoPay = 0;
+  let taxableWages = 0, untaxedPremiums = 0;
+
+  [...rowsEl.querySelectorAll('tr')].forEach(tr => {
+    const type = tr.querySelector('.type').value;
+    const hoursEl = tr.querySelector('.hours');
+    const premiumEl = tr.querySelector('.premium');
+    const hours = parseHours(hoursEl.value);
+    const premium = parseCurrency(premiumEl.value);
+
+    const validQuarter = hours === 0 || Math.abs((hours / 0.25) - Math.round(hours / 0.25)) < 1e-9;
+    hoursEl.classList.toggle('invalid', !validQuarter);
+
+    tr.classList.toggle('regular', type === 'Regular Awarded');
+    tr.classList.toggle('premium', type === 'Premium Pickup');
+    tr.classList.toggle('vot', type === 'VOT');
+    tr.classList.toggle('mot', type === 'MOT');
+    tr.classList.toggle('holiday', type === 'Holiday');
+    tr.classList.toggle('dat-hat-fto', type === 'DAT/HAT/FTO');
+    premiumEl.disabled = type !== 'Premium Pickup';
+    if (type !== 'Premium Pickup') premiumEl.value = '';
+
+    const premiumPerHour = (type === 'Premium Pickup' && hours > 0) ? premium / hours : 0;
+
+    let multiplier = 1;
+    if (type === 'VOT' || type === 'Holiday') multiplier = 1.5;
+    if (type === 'MOT') multiplier = 2.0;
+    if (type === 'DAT/HAT/FTO') multiplier = 1.0;
+
+    const effective = type === 'Premium Pickup'
+      ? base + premiumPerHour
+      : base * multiplier;
+
+    const taxableBasePay = hours * base * multiplier;
+    const premiumPay = type === 'Premium Pickup' ? premium : 0;
+    const grossExpected = taxableBasePay + premiumPay;
+    const taxAmount = taxableBasePay * taxRate;
+    const expected = grossExpected - taxAmount;
+
+    tr.querySelector('.baseCell').textContent = money(base);
+    tr.querySelector('.effectiveCell').textContent = money(effective);
+    tr.querySelector('.effectiveCell').title = type === 'Premium Pickup' && hours > 0
+      ? `Premium rate: ${money(premiumPerHour)}/hr`
+      : '';
+    tr.querySelector('.expectedCell').textContent = money(expected);
+
+    if (type === 'Regular Awarded') {
+      regularHours += hours; regularPay += expected;
+    } else if (type === 'Premium Pickup') {
+      premiumHours += hours; premiumPickupPay += expected;
+    } else if (type === 'VOT') {
+      votHours += hours; votPay += expected;
+    } else if (type === 'MOT') {
+      motHours += hours; motPay += expected;
+    } else if (type === 'Holiday') {
+      holidayHours += hours; holidayPay += expected;
+    } else if (type === 'DAT/HAT/FTO') {
+      datHatFtoHours += hours; datHatFtoPay += expected;
+    }
+
+    taxableWages += taxableBasePay;
+    untaxedPremiums += premiumPay;
+    grossPay += grossExpected;
+  });
+
+  const estimatedTaxes = taxableWages * taxRate;
+  const estimatedDeductions = parseCurrency(deductionsInput?.value);
+  const netSouthwestWages = taxableWages - estimatedTaxes - estimatedDeductions;
+  const takeHomePay = netSouthwestWages + untaxedPremiums;
+
+  const regularCombinedHours = regularHours + votHours + motHours + holidayHours + datHatFtoHours;
+  const totalHoursWorked = regularCombinedHours + premiumHours;
+
+  setText('sumPremium', num(premiumHours) + ' hrs');
+  setText('sumRegularCombined', num(regularCombinedHours) + ' hrs');
+  setText('sumVOTDetail', num(votHours) + ' hrs');
+  setText('sumMOTDetail', num(motHours) + ' hrs');
+  setText('sumHolidayDetail', num(holidayHours) + ' hrs');
+  setText('sumDatHatFtoDetail', num(datHatFtoHours) + ' hrs');
+  setText('sumHours', num(totalHoursWorked) + ' hrs');
+  setText('goalHours', num(totalHoursWorked) + ' hrs counted');
+  setText('sumTaxable', money(taxableWages));
+  setText('sumTaxes', money(estimatedTaxes));
+  setText('sumDeductions', money(estimatedDeductions));
+  setText('sumNetSouthwest', money(netSouthwestWages));
+  setText('sumUntaxedPremium', money(untaxedPremiums));
+  setText('sumPay', money(takeHomePay));
+  updateGoal(takeHomePay);
+}
+
+
+function getPayGoal() {
+  return parseCurrency(document.getElementById('payGoalInput')?.value) || 2400;
+}
+
+function formatGoalInput() {
+  const input = document.getElementById('payGoalInput');
+  if (!input) return;
+  const value = parseCurrency(input.value) || 2400;
+  input.value = money(value);
+}
+
+function updateGoal(totalPay) {
+  const payGoal = getPayGoal();
+  const pct = payGoal > 0 ? (totalPay / payGoal) * 100 : 0;
+  const capped = Math.max(0, Math.min(100, pct));
+  const remaining = Math.max(0, payGoal - totalPay);
+
+  const goalFill = document.getElementById('goalFill');
+  if (goalFill) goalFill.style.width = `${capped}%`;
+  setText('goalProgressText', `${money(totalPay)} of ${money(payGoal)}`);
+  setText('goalPercent', `${Math.round(pct)}% complete`);
+  setText('goalRemaining', remaining > 0
+    ? `${money(remaining)} remaining`
+    : `${money(totalPay - payGoal)} over goal`);
+
+  const msg = document.getElementById('goalMessage');
+  const panel = document.getElementById('goalPanel');
+  if (panel) panel.classList.toggle('goal-complete', totalPay >= payGoal);
+  if (!msg) return;
+
+  if (totalPay >= payGoal) msg.textContent = '💰 Goal crushed! Everything above this is extra.';
+  else if (pct >= 90) msg.textContent = '💵 Almost there. Finish strong!';
+  else if (pct >= 75) msg.textContent = `💸 You’re closing in on ${money(payGoal)}.`;
+  else if (pct >= 50) msg.textContent = '💰 Halfway there and building.';
+  else if (pct >= 25) msg.textContent = '💵 Nice start. Keep stacking it up.';
+  else if (pct > 0) msg.textContent = '💸 Every pickup gets you closer.';
+  else msg.textContent = `💰 Your ${money(payGoal)} target is ready when you are.`;
+}
+
+function getData() {
+  return {
+    baseRate: parseFloat(baseRateEl.value) || 0,
+    taxRate: parseFloat(taxRateEl.value) || 0,
+    deductions: parseCurrency(deductionsInput?.value),
+    payGoal: getPayGoal(),
+    rows: [...rowsEl.querySelectorAll('tr')].map(tr => ({
+      date: tr.querySelector('.date').value,
+      type: tr.querySelector('.type').value,
+      hours: parseHours(tr.querySelector('.hours').value),
+      premium: parseCurrency(tr.querySelector('.premium').value)
+    }))
+  };
+}
+
+function saveData(showStatus = true) {
+  localStorage.setItem('southwestPayTracker', JSON.stringify(getData()));
+  if (showStatus) {
+    const status = document.getElementById('autosaveStatus');
+    status.textContent = 'Saved';
+    clearTimeout(window.__saveStatusTimer);
+    window.__saveStatusTimer = setTimeout(() => status.textContent = 'Auto-saved', 900);
+  }
+}
+
+function renderData(data) {
+  baseRateEl.value = data.baseRate ?? 22.24;
+  taxRateEl.value = data.taxRate ?? 20;
+  if (deductionsInput) deductionsInput.value = money(data.deductions ?? 0);
+  const payGoalInput = document.getElementById('payGoalInput');
+  if (payGoalInput) payGoalInput.value = money(data.payGoal ?? 2400);
+  rowsEl.innerHTML = '';
+  const normalizedRows = (data.rows || []).map(row => ({
+    ...row,
+    hours: row.hours === '' || row.hours === undefined ? '' : parseHours(row.hours),
+    premium: row.premium === '' || row.premium === undefined ? '' : parseCurrency(row.premium)
+  }));
+  normalizedRows.forEach(addRow);
+  if (normalizedRows.length === 0) addRow();
+  recalc();
+}
+
+function loadSavedData() {
+  const raw = localStorage.getItem('southwestPayTracker');
+  if (!raw) return false;
+  try {
+    renderData(JSON.parse(raw));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function pdfEscape(str) {
+  return String(str).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+}
+
+function buildPdfBlob() {
+  const data = getData();
+  const stateJson = JSON.stringify(data);
+  const stateB64 = btoa(unescape(encodeURIComponent(stateJson)));
+
+  const base = parseFloat(baseRateEl.value) || 0;
+  const rows = [...rowsEl.querySelectorAll('tr')];
+  const totalHours = rows.reduce((sum, tr) => sum + (parseHours(tr.querySelector('.hours').value)), 0);
+  const totalPayText = document.getElementById('sumPay').textContent;
+
+  const lines = [];
+  lines.push('SWA EARNINGS TRACKER');
+  lines.push('');
+  lines.push(`Base Hourly Wage: ${money(base)}`);
+  lines.push(`Average Tax Rate: ${Number(taxRateEl.value || 0).toFixed(1)}%`);
+  lines.push(`Total Hours: ${totalHours.toFixed(2)}`);
+  lines.push(`Total Hours Worked: ${document.getElementById('sumHours').textContent}`);
+  lines.push(`Regular Hours: ${document.getElementById('sumRegularCombined').textContent}`);
+  lines.push(`Picked Up Hours: ${document.getElementById('sumPremium').textContent}`);
+  lines.push(`VOT Hours: ${document.getElementById('sumVOTDetail').textContent}`);
+  lines.push(`MOT Hours: ${document.getElementById('sumMOTDetail').textContent}`);
+  lines.push(`Holiday Hours: ${document.getElementById('sumHolidayDetail').textContent}`);
+  lines.push(`DAT/HAT/FTO Hours: ${document.getElementById('sumDatHatFtoDetail').textContent}`);
+  lines.push(`Gross Southwest Wages: ${document.getElementById('sumTaxable').textContent}`);
+  lines.push(`Estimated Taxes: ${document.getElementById('sumTaxes').textContent}`);
+  lines.push(`Estimated Deductions: ${document.getElementById('sumDeductions').textContent}`);
+  lines.push(`Net Southwest Wages: ${document.getElementById('sumNetSouthwest').textContent}`);
+  lines.push(`Premiums Received: ${document.getElementById('sumUntaxedPremium').textContent}`);
+  lines.push(`Estimated Take-Home: ${totalPayText}`);
+  lines.push(`Take-Home Goal: ${money(getPayGoal())}`);
+  lines.push('');
+  lines.push('DATE        TYPE                HOURS   PREMIUM PAID   EFFECTIVE/HR   EXPECTED');
+  lines.push('----------------------------------------------------------------------------');
+
+  rows.forEach(tr => {
+    const date = tr.querySelector('.date').value || '';
+    const type = tr.querySelector('.type').value || '';
+    const hours = parseHours(tr.querySelector('.hours').value);
+    const premium = parseCurrency(tr.querySelector('.premium').value);
+    const effective = tr.querySelector('.effectiveCell').textContent;
+    const expected = tr.querySelector('.expectedCell').textContent;
+    const premiumText = type === 'Premium Pickup' ? money(premium) : '-';
+    lines.push(
+      `${date.padEnd(10)}  ${type.padEnd(18)}  ${(hours.toFixed(2) + ' hrs').padStart(9)}   ${premiumText.padStart(12)}   ${effective.padStart(12)}   ${expected.padStart(10)}`
+    );
+  });
+
+  lines.push('');
+  lines.push('HOUR SUMMARY');
+  lines.push(`Total Hours Worked: ${document.getElementById('sumHours').textContent}`);
+  lines.push(`Regular Hours: ${document.getElementById('sumRegularCombined').textContent}`);
+  lines.push(`Picked Up Hours: ${document.getElementById('sumPremium').textContent}`);
+  lines.push(`VOT Hours: ${document.getElementById('sumVOTDetail').textContent}`);
+  lines.push(`MOT Hours: ${document.getElementById('sumMOTDetail').textContent}`);
+  lines.push(`Holiday Hours: ${document.getElementById('sumHolidayDetail').textContent}`);
+
+  const maxLinesPerPage = 44;
+  const pages = [];
+  for (let i = 0; i < lines.length; i += maxLinesPerPage) {
+    pages.push(lines.slice(i, i + maxLinesPerPage));
+  }
+
+  const objects = [];
+  const pageObjNums = [];
+  const contentObjNums = [];
+  const fontObjNum = 3 + pages.length * 2;
+
+  // Catalog and Pages will be objects 1 and 2.
+  objects[1] = `<< /Type /Catalog /Pages 2 0 R >>`;
+
+  for (let i = 0; i < pages.length; i++) {
+    const pageNum = 3 + i * 2;
+    const contentNum = 4 + i * 2;
+    pageObjNums.push(pageNum);
+    contentObjNums.push(contentNum);
+
+    const contentLines = [];
+    contentLines.push('BT');
+    contentLines.push('/F1 10 Tf');
+    contentLines.push('42 750 Td');
+
+    pages[i].forEach((line, idx) => {
+      const safe = pdfEscape(line);
+      if (idx === 0) {
+        contentLines.push(`(${safe}) Tj`);
+      } else {
+        contentLines.push(`0 -16 Td (${safe}) Tj`);
+      }
+    });
+    contentLines.push('ET');
+    const stream = contentLines.join('\n');
+
+    objects[pageNum] =
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] ` +
+      `/Resources << /Font << /F1 ${fontObjNum} 0 R >> >> /Contents ${contentNum} 0 R >>`;
+    objects[contentNum] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+  }
+
+  objects[2] = `<< /Type /Pages /Kids [${pageObjNums.map(n => `${n} 0 R`).join(' ')}] /Count ${pages.length} >>`;
+  objects[fontObjNum] = `<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>`;
+
+  let pdf = `%PDF-1.4\n%SWPAYDATA:${stateB64}\n`;
+  const offsets = [0];
+  for (let i = 1; i <= fontObjNum; i++) {
+    offsets[i] = pdf.length;
+    pdf += `${i} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+
+  const xrefPos = pdf.length;
+  pdf += `xref\n0 ${fontObjNum + 1}\n`;
+  pdf += `0000000000 65535 f \n`;
+  for (let i = 1; i <= fontObjNum; i++) {
+    pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${fontObjNum + 1} /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
+
+  return new Blob([pdf], { type: 'application/pdf' });
+}
+
+function downloadPdf() {
+  recalc();
+  const blob = buildPdfBlob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `Southwest_Pay_Tracker_${stamp}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function importPdf(file) {
+  try {
+    const buffer = await file.arrayBuffer();
+    const pdfText = new TextDecoder('latin1').decode(buffer);
+    const match = pdfText.match(/%SWPAYDATA:([A-Za-z0-9+/=]+)/);
+    if (!match) {
+      alert('This PDF does not contain editable Southwest Pay Tracker data. Please upload a PDF downloaded from this tracker.');
+      return;
+    }
+
+    const json = decodeURIComponent(escape(atob(match[1])));
+    const data = JSON.parse(json);
+    renderData(data);
+    saveData(false);
+    document.getElementById('autosaveStatus').textContent = 'PDF loaded • Auto-saved';
+    setTimeout(() => document.getElementById('autosaveStatus').textContent = 'Auto-saved', 1600);
+  } catch (err) {
+    alert('I could not read that PDF. Please use a PDF downloaded from this tracker.');
+  }
+}
+
+document.getElementById('addRowBtn').addEventListener('click', () => {
+  addRow();
+  saveData();
+});
+document.getElementById('downloadPdfBtn').addEventListener('click', downloadPdf);
+document.getElementById('uploadPdfBtn').addEventListener('click', () => {
+  document.getElementById('pdfFileInput').click();
+});
+document.getElementById('pdfFileInput').addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if (file) importPdf(file);
+  e.target.value = '';
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear all entries?')) return;
+  rowsEl.innerHTML = '';
+  addRow();
+  recalc();
+  saveData();
+});
+if (deductionsInput) {
+  deductionsInput.addEventListener('input', () => {
+    recalc();
+    saveData();
+  });
+  deductionsInput.addEventListener('change', () => {
+    deductionsInput.value = money(parseCurrency(deductionsInput.value));
+    recalc();
+    saveData();
+  });
+  deductionsInput.addEventListener('focusout', () => {
+    deductionsInput.value = money(parseCurrency(deductionsInput.value));
+    recalc();
+    saveData();
+  });
+}
+
+baseRateEl.addEventListener('input', () => {
+  recalc();
+  saveData();
+});
+taxRateEl.addEventListener('input', () => {
+  recalc();
+  saveData();
+});
+
+// Auto-save every edit, including date/type/hours/premium changes.
+rowsEl.addEventListener('input', () => saveData());
+rowsEl.addEventListener('change', e => {
+  if (e.target.classList.contains('hours')) {
+    formatHoursInput(e.target);
+    recalc();
+  }
+  if (e.target.classList.contains('premium')) {
+    formatPremiumInput(e.target);
+    recalc();
+  }
+  saveData();
+});
+rowsEl.addEventListener('focusout', e => {
+  if (e.target.classList.contains('hours')) {
+    formatHoursInput(e.target);
+    recalc();
+    saveData();
+  }
+  if (e.target.classList.contains('premium')) {
+    formatPremiumInput(e.target);
+    recalc();
+    saveData();
+  }
+});
+
+
+const detailsToggleBtn = document.getElementById('detailsToggleBtn');
+const payDetails = document.getElementById('payDetails');
+
+if (detailsToggleBtn && payDetails) {
+  detailsToggleBtn.addEventListener('click', () => {
+    const isOpen = !payDetails.hidden;
+    payDetails.hidden = isOpen;
+    detailsToggleBtn.textContent = isOpen ? 'Show Pay Details' : 'Hide Pay Details';
+    detailsToggleBtn.setAttribute('aria-expanded', String(!isOpen));
+  });
+}
+
+const payGoalInput = document.getElementById('payGoalInput');
+if (payGoalInput) {
+  payGoalInput.addEventListener('input', () => {
+    recalc();
+    saveData();
+  });
+  payGoalInput.addEventListener('change', () => {
+    formatGoalInput();
+    recalc();
+    saveData();
+  });
+  payGoalInput.addEventListener('focusout', () => {
+    formatGoalInput();
+    recalc();
+    saveData();
+  });
+}
+
+const goalPanel = document.getElementById('goalPanel');
+const goalToggleBtn = document.getElementById('goalToggleBtn');
+const hideGoalBtn = document.getElementById('hideGoalBtn');
+
+goalToggleBtn.addEventListener('click', () => {
+  goalPanel.classList.add('show');
+  goalToggleBtn.style.display = 'none';
+});
+
+hideGoalBtn.addEventListener('click', () => {
+  goalPanel.classList.remove('show');
+  goalToggleBtn.style.display = '';
+});
+
+if (!loadSavedData()) {
+  addRow();
+  recalc();
+  saveData(false);
+}
+</script>
+</body>
+</html>

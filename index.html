@@ -111,6 +111,9 @@
     overflow-x:auto; margin:0; border:1px solid var(--line); border-radius:18px;
     box-shadow:0 8px 28px rgba(34,49,82,.055); background:var(--panel);
   }
+  .entry-actions{display:flex;justify-content:flex-start;padding:10px 2px 0}
+  .entry-actions .primary{padding:9px 16px}
+
   table{width:100%;border-collapse:separate;border-spacing:0;min-width:1030px}
   th{
     position:sticky;top:0;z-index:1;background:linear-gradient(180deg,#f4f7ff,#fbfcfe);color:#68779a;padding:12px 10px;
@@ -419,7 +422,6 @@
 
 
     <div class="actions">
-      <button class="primary" id="addRowBtn">+ Add Entry</button>
       <button class="secondary" id="downloadPdfBtn">Download PDF</button>
       <button class="secondary" id="uploadPdfBtn">Upload PDF</button>
       <input id="pdfFileInput" type="file" accept="application/pdf,.pdf" hidden>
@@ -443,6 +445,10 @@
         </thead>
         <tbody id="rows"></tbody>
       </table>
+    </div>
+
+    <div class="entry-actions">
+      <button class="primary" id="addRowBtn">+ Add Entry</button>
     </div>
 
     <div class="footer-summary">
@@ -779,31 +785,25 @@ function buildPdfBlob() {
 
   const base = parseFloat(baseRateEl.value) || 0;
   const rows = [...rowsEl.querySelectorAll('tr')];
-  const totalHours = rows.reduce((sum, tr) => sum + (parseHours(tr.querySelector('.hours').value)), 0);
-  const totalPayText = document.getElementById('sumPay').textContent;
 
   const lines = [];
   lines.push('SWA EARNINGS TRACKER');
   lines.push('');
+
+  // Money-related information stays together above the entries.
+  lines.push('PAY SUMMARY');
   lines.push(`Base Hourly Wage: ${money(base)}`);
   lines.push(`Average Tax Rate: ${Number(taxRateEl.value || 0).toFixed(1)}%`);
-  lines.push(`Total Hours: ${totalHours.toFixed(2)}`);
-  lines.push(`Total Hours Counted: ${document.getElementById('sumHours').textContent}`);
-  lines.push(`Regular Hours: ${document.getElementById('sumRegularCombined').textContent}`);
-  lines.push(`Picked Up Hours: ${document.getElementById('sumPremium').textContent}`);
-  lines.push(`VOT Hours: ${document.getElementById('sumVOTDetail').textContent}`);
-  lines.push(`MOT Hours: ${document.getElementById('sumMOTDetail').textContent}`);
-  lines.push(`Holiday Hours: ${document.getElementById('sumHolidayDetail').textContent}`);
-  lines.push(`DAT/HAT/FTO Hours: ${document.getElementById('sumDatHatFtoDetail').textContent}`);
   lines.push(`Gross Southwest Wages: ${document.getElementById('sumTaxable').textContent}`);
   lines.push(`Estimated Taxes: ${document.getElementById('sumTaxes').textContent}`);
   lines.push(`Estimated Deductions: ${document.getElementById('sumDeductions').textContent}`);
   lines.push(`Net Southwest Wages: ${document.getElementById('sumNetSouthwest').textContent}`);
-  lines.push(`Expected Southwest Pay: ${document.getElementById('sumExpectedSouthwest').textContent}`);
   lines.push(`Premiums Received: ${document.getElementById('sumUntaxedPremium').textContent}`);
-  lines.push(`Estimated Take-Home: ${totalPayText}`);
+  lines.push(`Estimated Take-Home: ${document.getElementById('sumPay').textContent}`);
   lines.push(`Take-Home Goal: ${money(getPayGoal())}`);
   lines.push('');
+
+  lines.push('ENTRIES');
   lines.push('DATE        TYPE                HOURS   PREMIUM PAID   EFFECTIVE/HR   EXPECTED');
   lines.push('----------------------------------------------------------------------------');
 
@@ -820,14 +820,16 @@ function buildPdfBlob() {
     );
   });
 
+  // Hour-related information stays together below the entries.
   lines.push('');
   lines.push('HOUR SUMMARY');
-  lines.push(`Total Hours Worked: ${document.getElementById('sumHours').textContent}`);
+  lines.push(`Total Hours Counted: ${document.getElementById('sumHours').textContent}`);
   lines.push(`Regular Hours: ${document.getElementById('sumRegularCombined').textContent}`);
   lines.push(`Picked Up Hours: ${document.getElementById('sumPremium').textContent}`);
   lines.push(`VOT Hours: ${document.getElementById('sumVOTDetail').textContent}`);
   lines.push(`MOT Hours: ${document.getElementById('sumMOTDetail').textContent}`);
   lines.push(`Holiday Hours: ${document.getElementById('sumHolidayDetail').textContent}`);
+  lines.push(`DAT/HAT/FTO Hours: ${document.getElementById('sumDatHatFtoDetail').textContent}`);
 
   const maxLinesPerPage = 44;
   const pages = [];
@@ -972,6 +974,34 @@ baseRateEl.addEventListener('input', () => {
 taxRateEl.addEventListener('input', () => {
   recalc();
   saveData();
+});
+
+// Make numeric entry fields easy to replace without accidentally appending to defaults.
+function prepareFieldForTyping(input) {
+  if (!input || input.disabled || input.readOnly) return;
+  if (!input.matches('#baseRate, #taxRate, #deductionsInput, #payGoalInput, .hours, .premium')) return;
+
+  const raw = String(input.value || '').trim();
+  const isHours = input.classList.contains('hours');
+  const isMoneyZero = (input.classList.contains('premium') || input.id === 'deductionsInput')
+    && raw !== '' && parseCurrency(raw) === 0;
+  const isHoursZero = isHours && raw !== '' && parseHours(raw) === 0;
+
+  // Clear displayed zero defaults completely.
+  if (isMoneyZero || isHoursZero) {
+    input.value = '';
+    return;
+  }
+
+  // For meaningful prefilled values such as wage, tax rate, goal, or saved entries,
+  // select the whole value so the next keystroke replaces it instead of appending.
+  requestAnimationFrame(() => {
+    try { input.select(); } catch (_) {}
+  });
+}
+
+document.addEventListener('focusin', e => {
+  prepareFieldForTyping(e.target);
 });
 
 // Auto-save every edit, including date/type/hours/premium changes.
